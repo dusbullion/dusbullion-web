@@ -26,9 +26,9 @@ export default function Header() {
                 </Link>
                 <nav className="hidden items-center gap-6 text-sm md:flex">
                     <Link href="/products" className="hover:text-black/70">Products</Link>
-                    <Link href="#why-us" className="hover:text-black/70">Why Us</Link>
-                    <Link href="#faq" className="hover:text-black/70">FAQ</Link>
-                    <Link href="#contact" className="hover:text-black/70">Contact</Link>
+                    <Link href="/why-us" className="hover:text-black/70">Why Us</Link>
+                    <Link href="/faq" className="hover:text-black/70">FAQ</Link>
+                    <Link href="/contact" className="hover:text-black/70">Contact</Link>
                 </nav>
                 <div className="flex items-center gap-3 text-sm">
                     <button onClick={() => openAuth("login")} className="btn-ghost hidden sm:inline">Login</button>

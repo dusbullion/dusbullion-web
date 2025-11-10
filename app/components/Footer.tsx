@@ -28,9 +28,9 @@ export default function Footer() {
                     <div>
                         <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-700">Company</h4>
                         <ul className="space-y-2 text-sm text-neutral-600">
-                            <li><Link href="#why-us" className="hover:text-black/70">Why Us</Link></li>
-                            <li><Link href="#faq" className="hover:text-black/70">FAQ</Link></li>
-                            <li><Link href="#" className="hover:text-black/70">About</Link></li>
+                            <li><Link href="/why-us" className="hover:text-black/70">Why Us</Link></li>
+                            <li><Link href="/faq" className="hover:text-black/70">FAQ</Link></li>
+                            <li><Link href="/" className="hover:text-black/70">About</Link></li>
                         </ul>
                     </div>
 
@@ -40,7 +40,7 @@ export default function Footer() {
                         <ul className="space-y-2 text-sm text-neutral-600">
                             <li><Link href="#" className="hover:text-black/70">Shipping & Returns</Link></li>
                             <li><Link href="#" className="hover:text-black/70">Payment Methods</Link></li>
-                            <li><Link href="#" className="hover:text-black/70">Contact</Link></li>
+                            <li><Link href="/contact" className="hover:text-black/70">Contact</Link></li>
                         </ul>
                     </div>
 
