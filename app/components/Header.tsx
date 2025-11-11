@@ -8,6 +8,86 @@ import { useUI } from "../store/ui";
 import UserMenu from "./UserMenu";
 import CartIcon from "./CartIcon";
 import TopBar from "./TopBar";
+import { useCart } from "../store/cart";
+
+function initialsFromEmail(email?: string | null) {
+  if (!email) return "U";
+  const base = email.split("@")[0] || "U";
+  return base.slice(0, 2).toUpperCase();
+}
+
+function MobileUserSection({ close }: { close: () => void }) {
+  const { user, signOut, loading } = useAuth();
+  const { openAuth } = useUI();
+  const count = useCart((s) => s.count());
+
+  if (loading) {
+    return <div className="mx-2 my-3 h-10 animate-pulse rounded-xl bg-neutral-200" />;
+  }
+
+  if (!user) {
+    return (
+      <div className="mt-2 space-y-2 px-2 pb-4">
+        <button onClick={() => { close(); openAuth("login"); }} className="btn-ghost w-full">
+          Login
+        </button>
+        <button onClick={() => { close(); openAuth("register"); }} className="btn-gold w-full">
+          Register
+        </button>
+      </div>
+    );
+  }
+
+  const name = user.displayName || user.email || "Account";
+
+  return (
+    <div className="mt-3 space-y-3 px-3 pb-5">
+      <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3">
+        <div className="grid size-10 place-items-center overflow-hidden rounded-full bg-neutral-100 text-sm font-semibold">
+          {user.photoURL ? (
+            <img src={user.photoURL} alt="avatar" className="size-full object-cover" />
+          ) : (
+            <span>{initialsFromEmail(user.email)}</span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{name}</p>
+          {user.email && <p className="truncate text-xs text-neutral-500">{user.email}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href="/account"
+          onClick={close}
+          className="rounded-xl border border-neutral-300 px-4 py-2 text-center text-sm font-medium hover:bg-neutral-100"
+        >
+          My Account
+        </Link>
+        <button
+          onClick={async () => { await signOut(); close(); }}
+          className="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100"
+        >
+          Sign out
+        </button>
+      </div>
+
+      <Link
+        href="/cart"
+        onClick={close}
+        className="relative block rounded-xl border border-neutral-300 px-4 py-2 text-center font-medium hover:bg-neutral-100"
+      >
+        Cart
+        {count > 0 && (
+          <span className="absolute -right-2 -top-2 min-w-5 rounded-full bg-[#c89f48] px-1.5 text-center text-[10px] font-semibold text-white">
+            {count}
+          </span>
+        )}
+      </Link>
+    </div>
+  );
+}
+
 
 export default function Header() {
   const { user } = useAuth();
@@ -109,15 +189,17 @@ export default function Header() {
 
             {/* Actions */}
             <div className="mt-2 space-y-2 px-2 pb-6">
+              <MobileUserSection close={() => setOpen(false)} />
+
               {/* Signed-out: open auth modal */}
-              {!user && (
+              {/* {!user && (
                 <>
                   <button onClick={() => { setOpen(false); openAuth("login"); }} className="btn-ghost w-full">Login</button>
                   <button onClick={() => { setOpen(false); openAuth("register"); }} className="btn-gold w-full">Register</button>
                 </>
-              )}
+              )} */}
               {/* Signed-in: show cart link */}
-              {user && (
+              {/* {user && (
                 <Link
                   href="/cart"
                   onClick={() => setOpen(false)}
@@ -125,7 +207,7 @@ export default function Header() {
                 >
                   Cart
                 </Link>
-              )}
+              )} */}
             </div>
           </div>
         </div>
