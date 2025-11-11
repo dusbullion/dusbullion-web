@@ -28,10 +28,10 @@ function MobileUserSection({ close }: { close: () => void }) {
   if (!user) {
     return (
       <div className="mt-2 space-y-2 px-2 pb-4">
-        <button onClick={() => { close(); openAuth("login"); }} className="btn-ghost w-full">
+        <button onClick={() => { close(); openAuth("login"); }} className="btn-ghost w-full cursor-pointer">
           Login
         </button>
-        <button onClick={() => { close(); openAuth("register"); }} className="btn-gold w-full">
+        <button onClick={() => { close(); openAuth("register"); }} className="btn-secondary w-full cursor-pointer">
           Register
         </button>
       </div>
@@ -111,7 +111,7 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="relative h-10 w-24 md:h-14 md:w-36">
-            <Image src="/transparent-gold-logo.png" alt="dusbullion logo" fill className="object-contain" priority />
+            <Image src="/dusbullion-logo.png" alt="dusbullion logo" fill className="object-contain" priority />
           </div>
           {/* <span className="text-lg font-semibold tracking-tight md:text-xl">dusbullion.com</span> */}
         </Link>
@@ -164,7 +164,7 @@ export default function Header() {
             <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
               <div className="flex items-center gap-2">
                 <div className="relative h-10 w-24">
-                  <Image src="/transparent-gold-logo.png" alt="dusbullion logo" fill className="object-contain" />
+                  <Image src="/dusbullion-logo.png" alt="dusbullion logo" fill className="object-contain" />
                 </div>
                 {/* <span className="text-lg font-semibold">dusbullion</span> */}
               </div>

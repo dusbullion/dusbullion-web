@@ -11,7 +11,7 @@ export default function Footer() {
                         <Link href="/" className="flex items-center gap-2">
                             <div className="relative h-12 w-24 md:h-12 md:w-36">
                                 <Image
-                                src="/transparent-gold-logo.png"
+                                src="/dusbullion-logo.png"
                                 alt="dusbullion logo - Gold Bars Bullion"
                                 fill
                                 className="object-contain"

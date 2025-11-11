@@ -17,8 +17,8 @@ export default function UserMenu() {
   if (!user) {
     return (
       <div className="flex items-center gap-2">
-        <button onClick={() => openAuth("login")} className="btn-ghost">Login</button>
-        <button onClick={() => openAuth("register")} className="btn-gold">Register</button>
+        <button onClick={() => openAuth("login")} className="btn-ghost cursor-pointer">Login</button>
+        <button onClick={() => openAuth("register")} className="btn-secondary cursor-pointer">Register</button>
       </div>
     );
   }
