@@ -10,8 +10,19 @@ import CartIcon from "./CartIcon";
 import TopBar from "./TopBar";
 import { useCart } from "../store/cart";
 
-function initialsFromEmail(email?: string | null) {
-  if (!email) return "U";
+// function initialsFromEmail(email?: string | null) {
+//   if (!email) return "U";
+//   const base = email.split("@")[0] || "U";
+//   return base.slice(0, 2).toUpperCase();
+// }
+
+function initialsFromUser(u: { displayName?: string | null; email?: string | null }) {
+  if (u?.displayName) {
+    const parts = u.displayName.trim().split(/\s+/).slice(0, 2);
+    const ini = parts.map((p) => p[0]?.toUpperCase() || "").join("");
+    if (ini) return ini;
+  }
+  const email = u?.email ?? "U";
   const base = email.split("@")[0] || "U";
   return base.slice(0, 2).toUpperCase();
 }
@@ -47,7 +58,7 @@ function MobileUserSection({ close }: { close: () => void }) {
           {user.photoURL ? (
             <img src={user.photoURL} alt="avatar" className="size-full object-cover" />
           ) : (
-            <span>{initialsFromEmail(user.email)}</span>
+            <span>{initialsFromUser(user)}</span>
           )}
         </div>
         <div className="min-w-0">
