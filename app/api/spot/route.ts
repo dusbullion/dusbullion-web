@@ -36,7 +36,8 @@ export async function GET() {
       // GoldAPI: data.price is USD/oz, data.timestamp (seconds)
       usdPerOz = Number(data?.price);
       updatedAt = data?.timestamp ? new Date(data.timestamp * 1000).toISOString() : updatedAt;
-    } else if (provider === "metalsapi") {
+    } 
+    else if (provider === "metalsapi") {
       const qs = new URLSearchParams({ base: "XAU", symbols: "USD", access_key: key });
       const res = await fetch(`${url}?${qs.toString()}`, { next: { revalidate: 15 } });
       if (!res.ok) throw new Error(`Upstream ${res.status}`);
