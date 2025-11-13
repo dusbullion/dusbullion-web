@@ -43,6 +43,15 @@ export default function ProductCard(props: ProductCardProps) {
           spotPerOz * (grams / TROY_OUNCE_IN_GRAMS) + (prod.premiumUsd || 0)
         )
       : null;
+    
+  console.log(
+    "ProductCard",
+    prod.id,
+    "spotPerOz",
+    spotPerOz,
+    "livePrice",
+    livePrice
+  ); // 👈 See this in Vercel DevTools
 
   return (
     <div className="card space-y-2">
