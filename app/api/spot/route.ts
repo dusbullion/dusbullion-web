@@ -44,7 +44,8 @@ export async function GET() {
       // Metals-API: data.rates.USD is USD per oz
       usdPerOz = Number(data?.rates?.USD);
       updatedAt = data?.timestamp ? new Date(data.timestamp * 1000).toISOString() : updatedAt;
-    } else {
+    } 
+    else {
       throw new Error(`Unknown provider: ${provider}`);
     }
 

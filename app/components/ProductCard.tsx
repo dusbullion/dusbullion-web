@@ -28,7 +28,6 @@ export default function ProductCard(props: ProductCardProps) {
   const prod: Product = "p" in props ? props.p : props.product;
   const brand = prod.brand;
   const name = prod.name;
-
   // Weight-aware price calculation
   const grams = prod.weightGrams ?? TROY_OUNCE_IN_GRAMS;
 

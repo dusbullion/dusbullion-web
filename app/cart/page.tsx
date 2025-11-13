@@ -57,7 +57,6 @@ export default function CartPage() {
   const clear      = useCart((s) => s.clear);
   const subtotalFn = useCart((s) => s.subtotal);
   const { user }   = useAuth();
-
   const total    = subtotalFn();
   const shipping = total > 500 ? 0 : 15;
   const grand    = total + shipping;

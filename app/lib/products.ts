@@ -33,7 +33,6 @@ export const PRODUCTS: Product[] = [
     image: "/products/Great-Britain-Great-Engravers-Collection-Una-Lion-1oz.jpg",
     inStock: true,
   },
-
   // --- Italpreziosi ---
   {
     id: "au-bar-1oz-italpreziosi",

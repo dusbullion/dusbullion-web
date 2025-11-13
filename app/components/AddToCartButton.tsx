@@ -19,6 +19,7 @@ type Props = {
 
 export default function AddToCartButton({ product, priceUsd }: Props) {
   const add = useCart((s) => s.add);
+  
   return (
     <button
       className="btn-secondary w-full sm:w-auto cursor-pointer"

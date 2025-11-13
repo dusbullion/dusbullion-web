@@ -47,7 +47,6 @@ export default function SpotTicker() {
       </div>
     );
   }
-
   return (
     <div className="flex items-center gap-2 text-sm">
         <span className="text-[#c89f48]">Gold (XAU):</span>

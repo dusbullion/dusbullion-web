@@ -16,6 +16,7 @@ export const metadata = {
   description: "Buy 1oz gold bars from top global mints at live spot-linked prices.",
 };
 
+
 export default async function ProductsPage() {
   const spot = await getSpot();
   const spotPerOz = Number(spot?.usdPerOz || 0);
