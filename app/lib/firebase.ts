@@ -1,6 +1,12 @@
-// lib/firebase.ts
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, browserLocalPersistence, setPersistence, type Auth } from "firebase/auth";
+// app/lib/firebase.ts
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import {
+  getAuth,
+  browserLocalPersistence,
+  setPersistence,
+  type Auth,
+} from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -15,7 +21,9 @@ function createFirebaseApp(): FirebaseApp {
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
 
+// Single app + db instances shared everywhere
 const app = createFirebaseApp();
+const db: Firestore = getFirestore(app);
 
 /** Get Auth only on the client. Returns null on the server. */
 export function getClientAuth(): Auth | null {
@@ -26,4 +34,9 @@ export function getClientAuth(): Auth | null {
   return auth;
 }
 
-export { app };
+/** Firestore client – used from client components like profile page */
+export function getClientDb(): Firestore {
+  return db;
+}
+
+export { app, db };
