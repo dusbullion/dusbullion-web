@@ -4,6 +4,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+
 import { useCart } from "../store/cart";
 import { useAuth } from "../lib/auth-context";
 import { useUI } from "../store/ui";
@@ -12,20 +14,52 @@ function money(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
+type SpotResponse = {
+  usdPerOz: number;
+  updatedAt: string;
+  provider: string;
+  error?: string;
+};
+
 export default function CartPage() {
-  const items      = useCart((s) => s.items);
-  const setQty     = useCart((s) => s.setQty);
-  const remove     = useCart((s) => s.remove);
-  const clear      = useCart((s) => s.clear);
-  const subtotalFn = useCart((s) => s.subtotal);
+  const items = useCart((s) => s.items);
+  const setQty = useCart((s) => s.setQty);
+  const remove = useCart((s) => s.remove);
+  const clear = useCart((s) => s.clear);
 
-  const { user }   = useAuth();
+  const { user } = useAuth();
   const { openAuth } = useUI();
-  const router     = useRouter();
+  const router = useRouter();
 
-  const total    = subtotalFn();
+  /** 🔥 Fetch live spot price every 15 sec */
+  const { data } = useQuery<SpotResponse>({
+    queryKey: ["spot-price"],
+    queryFn: async () => {
+      const r = await fetch("/api/spot", { cache: "no-store" });
+      return r.json();
+    },
+    refetchInterval: 15000,
+  });
+
+  const spotPerOz = data?.usdPerOz ?? 0;
+
+  /** 🔥 Recalculate each item's real-time price */
+  const enrichedItems = items.map((it) => {
+    const grams = it.weightGrams || 31.1035;
+    const livePrice = spotPerOz
+      ? spotPerOz * (grams / 31.1035) + (it.premiumUsd || 0)
+      : it.priceUsd;
+
+    return {
+      ...it,
+      livePrice,
+      lineTotal: livePrice * it.qty,
+    };
+  });
+
+  const subtotal = enrichedItems.reduce((s, i) => s + i.lineTotal, 0);
   const shipping = 0;
-  const grand    = total + shipping;
+  const grand = subtotal + shipping;
 
   // ------------------- EMPTY CART -------------------
   if (!items.length) {
@@ -51,7 +85,7 @@ export default function CartPage() {
         {/* Items */}
         <div className="rounded-2xl border border-neutral-200 bg-white">
           <ul className="divide-y divide-neutral-200">
-            {items.map((it) => (
+            {enrichedItems.map((it) => (
               <li
                 key={it.id}
                 className="flex flex-col gap-4 p-4 sm:flex-row sm:gap-5"
@@ -77,8 +111,10 @@ export default function CartPage() {
                         </p>
                       )}
                     </div>
+
+                    {/* LIVE PRICE */}
                     <p className="text-base font-semibold sm:text-sm">
-                      {money(it.priceUsd)}
+                      {money(it.livePrice)}
                     </p>
                   </div>
 
@@ -96,10 +132,8 @@ export default function CartPage() {
                         </button>
                         <input
                           type="number"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
                           min={1}
-                          className="h-10 w-16 appearance-none text-center text-base outline-none sm:h-8 sm:w-12 sm:text-sm"
+                          className="h-10 w-16 text-center sm:h-8 sm:w-12"
                           value={it.qty}
                           onChange={(e) => {
                             const v = parseInt(e.target.value || "1", 10);
@@ -107,7 +141,7 @@ export default function CartPage() {
                           }}
                         />
                         <button
-                          className="grid h-10 w-12 place-items-center text-base sm:h-8 sm:w-10 sm:text-sm"
+                          className="grid h-10 w-12 place-items-center sm:h-8 sm:w-10"
                           onClick={() => setQty(it.id, it.qty + 1)}
                           aria-label="Increase quantity"
                           type="button"
@@ -120,7 +154,7 @@ export default function CartPage() {
                     <div className="text-left sm:text-right">
                       <p className="text-xs text-neutral-500">Line total</p>
                       <p className="text-base font-semibold sm:text-sm">
-                        {money(it.priceUsd * it.qty)}
+                        {money(it.lineTotal)}
                       </p>
                     </div>
                   </div>
@@ -155,10 +189,11 @@ export default function CartPage() {
         {/* Summary */}
         <aside className="h-max rounded-2xl border border-neutral-200 bg-white p-5 lg:sticky lg:top-24">
           <h2 className="text-lg font-semibold">Order Summary</h2>
+
           <div className="mt-3 space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>{money(total)}</span>
+              <span>{money(subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span>Shipping</span>
@@ -170,13 +205,13 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* ★ LOGIN CHECK ADDED HERE ★ */}
+          {/* LOGIN GATE */}
           <button
             className="btn-secondary mt-4 w-full py-3 text-base sm:py-2 sm:text-sm"
             onClick={() => {
               if (!user) {
                 alert("Please log in to proceed to checkout.");
-                openAuth("login");  // 👈 after alert → open login modal
+                openAuth("login");
                 return;
               }
               router.push("/checkout");
@@ -186,7 +221,7 @@ export default function CartPage() {
           </button>
 
           <p className="mt-2 text-xs text-neutral-500">
-            You&apos;ll enter card details and shipping on the next step.
+            Prices update live until you begin checkout.
           </p>
         </aside>
       </div>

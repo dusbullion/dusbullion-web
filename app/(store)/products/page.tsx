@@ -1,26 +1,32 @@
 // app/(store)/products/page.tsx
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import PRODUCTS from "@/app/lib/products";
-import ProductGrid from "@/app/components/ProductGrid"; // 👈 use the grid
+import ProductGrid from "@/app/components/ProductGrid";
 
-async function getSpot() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-  const r = await fetch(`${baseUrl}/api/spot`, {
-    cache: "no-store",
-  }).catch(() => null);
-
-  if (!r || !r.ok) return { usdPerOz: 0 };
-  return r.json();
-}
-
-export const metadata = {
-  title: "Products | dusbullion.com",
-  description:
-    "Buy 1oz gold bars from top global mints at live spot-linked prices.",
+type SpotResponse = {
+  usdPerOz: number;
+  updatedAt: string;
+  provider: string;
+  error?: string;
 };
 
-export default async function ProductsPage() {
-  const spot = await getSpot();
-  const spotPerOz = Number(spot?.usdPerOz || 0);
+function money(n: number) {
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+export default function ProductsPage() {
+  const { data, isLoading, isError } = useQuery<SpotResponse>({
+    queryKey: ["spot-price"],
+    queryFn: async () => {
+      const r = await fetch("/api/spot", { cache: "no-store" });
+      return r.json();
+    },
+    refetchInterval: 15000, // refresh every 15s
+  });
+
+  const spotPerOz = data?.usdPerOz ?? 0;
 
   return (
     <section className="section py-8 space-y-6">
@@ -28,16 +34,15 @@ export default async function ProductsPage() {
         <h1 className="text-2xl font-semibold">Products</h1>
         <p className="text-sm text-neutral-600">
           Live spot:{" "}
-          {spotPerOz
-            ? spotPerOz.toLocaleString("en-US", {
-                style: "currency",
-                currency: "USD",
-              }) + " / oz"
-            : "unavailable"}
+          {isLoading
+            ? "loading…"
+            : isError || !spotPerOz
+            ? "unavailable"
+            : `${money(spotPerOz)} / oz`}
         </p>
       </header>
 
-      {/* 🔥 This handles layout + passes spot price down */}
+      {/* Uses live spot price for each ProductCard */}
       <ProductGrid products={PRODUCTS} spotPerOz={spotPerOz} />
     </section>
   );
