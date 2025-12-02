@@ -18,15 +18,15 @@ export default function ContactPage() {
       <div className="grid gap-8 md:grid-cols-2">
         <ContactForm />
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 space-y-4">
-          <h3 className="text-lg font-semibold">Our Office</h3>
+          {/* <h3 className="text-lg font-semibold">Our Office</h3>
           <p className="text-sm text-neutral-600">
-            123 Gold Street, Parsippany, NJ 07054 <br /> United States
-          </p>
+            2057 Belhaven Ave, Simi Valley, CA-93063 <br /> United States
+          </p> */}
 
           <h3 className="text-lg font-semibold mt-4">Contact</h3>
           <p className="text-sm text-neutral-600">
-            Email: <a href="mailto:support@dusbullion.com" className="text-blue-600 underline">support@dusbullion.com</a><br />
-            Phone: +1 (973) 555-0147
+            Email: <a href="mailto:bulliontrdr@gmail.com" className="text-blue-600 underline">bulliontrdr@gmail.com</a><br />
+            Phone: +1 (805) 336-4805
           </p>
 
           <h3 className="text-lg font-semibold mt-4">Business Hours</h3>
