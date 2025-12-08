@@ -1,11 +1,11 @@
 // app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { appendOrderToSheet } from "@/app/lib/google-sheets";
 
-export const runtime = "nodejs"; // 👈 required for raw body + webhooks
+export const runtime = "nodejs"; // required for raw body + webhooks
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    // Important: we must read the raw body as text for signature verification
+    // ⚠️ must read *raw* body as text for signature verification
     const body = await req.text();
     event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
   } catch (err: any) {
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      /** ---------------- CHECKOUT SESSION (old flow) ---------------- **/
+      /** ---------------- CHECKOUT SESSION (if you ever use it) ---------------- **/
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log(
@@ -35,10 +35,6 @@ export async function POST(req: Request) {
           "customer_email:",
           session.customer_details?.email
         );
-        // TODO:
-        // - create / update order in Firestore
-        // - mark as paid
-        // - trigger email, etc.
         break;
       }
 
@@ -51,12 +47,11 @@ export async function POST(req: Request) {
           "email:",
           vs.metadata?.user_email
         );
-        // TODO:
-        // - mark this user/email as "KYC verified" in your DB
+        // e.g. mark user as KYC-verified in DB
         break;
       }
 
-      /** ---------------- PAYMENT INTENT (Payment Element) ---------------- **/
+      /** ---------------- PAYMENT INTENT (Payment Element flow) ---------------- **/
       case "payment_intent.processing": {
         const pi = event.data.object as Stripe.PaymentIntent;
         console.log(
@@ -66,13 +61,12 @@ export async function POST(req: Request) {
           pi.currency,
           pi.payment_method_types
         );
-        // Example:
-        // await updateOrder(pi.id, { status: "processing" });
         break;
       }
 
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
+
         console.log(
           "✅ Payment succeeded:",
           pi.id,
@@ -80,13 +74,82 @@ export async function POST(req: Request) {
           pi.currency,
           pi.payment_method_types
         );
-        // Example:
-        // await updateOrder(pi.id, {
-        //   status: "paid",
-        //   paidAt: new Date(),
-        //   paymentMethodTypes: pi.payment_method_types,
-        //   metadata: pi.metadata,
-        // });
+
+        // Amount in major units (USD)
+        const amountUsd = (pi.amount_received ?? pi.amount ?? 0) / 100;
+
+        // Read breakdown from metadata (set in /api/payment-intent)
+        const meta = pi.metadata || {};
+
+        const totalUsd =
+          meta.total_usd && !isNaN(Number(meta.total_usd))
+            ? Number(meta.total_usd)
+            : amountUsd;
+
+        const subtotalUsd =
+          meta.subtotal_usd && !isNaN(Number(meta.subtotal_usd))
+            ? Number(meta.subtotal_usd)
+            : null;
+
+        const shippingUsd =
+          meta.shipping_usd && !isNaN(Number(meta.shipping_usd))
+            ? Number(meta.shipping_usd)
+            : null;
+
+        const processingFeeUsd =
+          meta.processing_fee_usd && !isNaN(Number(meta.processing_fee_usd))
+            ? Number(meta.processing_fee_usd)
+            : null;
+
+        // Fallback: compute fee if not present
+        const feeUsd =
+          processingFeeUsd ?? Number((totalUsd * 0.055).toFixed(2));
+
+        const netUsd = Number((totalUsd - feeUsd).toFixed(2));
+
+        const shipping = pi.shipping || null;
+        const customerEmail =
+          pi.receipt_email ||
+          shipping?.phone || // (Stripe sometimes stores email only on receipt_email)
+          null;
+
+        const shippingName = shipping?.name || null;
+        const shippingAddress = shipping?.address || null;
+        const phone = shipping?.phone || null;
+
+        const nowIso = new Date().toISOString();
+
+        // 📝 Row order should match your Google Sheet header
+        const row: (string | number | null)[] = [
+          nowIso, // A: Recorded at (server time)
+          pi.id, // B: Stripe PaymentIntent ID
+          pi.status, // C: Status (succeeded)
+          totalUsd.toFixed(2), // D: Gross total (USD)
+          feeUsd.toFixed(2), // E: Secure payment processing fee (USD)
+          netUsd.toFixed(2), // F: Net after fee (USD)
+          pi.currency.toUpperCase(), // G: Currency
+          customerEmail, // H: Customer email (may be null)
+          shippingName, // I: Shipping name
+          shippingAddress?.line1 || "", // J: Ship line1
+          shippingAddress?.line2 || "", // K: Ship line2
+          shippingAddress?.city || "", // L: Ship city
+          shippingAddress?.state || "", // M: Ship state
+          shippingAddress?.postal_code || "", // N: Ship postal
+          shippingAddress?.country || "", // O: Ship country
+          phone || "", // P: Phone
+          (meta.order_id as string) || "", // Q: internal order id (if you ever set one)
+          JSON.stringify(meta || {}), // R: raw metadata (optional)
+          (pi.payment_method_types || []).join(", "), // S: payment method types
+        ];
+
+        // ✅ Append to Google Sheet (don’t fail webhook if Sheets fails)
+        try {
+          await appendOrderToSheet(row);
+          console.log("📊 Logged order to Google Sheet for PI:", pi.id);
+        } catch (sheetErr) {
+          console.error("Failed to log order to Google Sheets:", sheetErr);
+        }
+
         break;
       }
 
@@ -95,8 +158,6 @@ export async function POST(req: Request) {
         const msg =
           pi.last_payment_error?.message || "Unknown payment failure";
         console.warn("❌ Payment failed:", pi.id, msg);
-        // Example:
-        // await updateOrder(pi.id, { status: "failed", failureReason: msg });
         break;
       }
 
@@ -104,20 +165,18 @@ export async function POST(req: Request) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         console.log("💸 Charge refunded:", charge.id, charge.amount_refunded);
-        // Example:
-        // await updateOrderByCharge(charge.id, { status: "refunded" });
         break;
       }
 
       default: {
-        // For debugging; you can comment this out later
+        // For debugging; can be muted in production
         console.log("Unhandled Stripe event type:", event.type);
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (e) {
-    console.error("Webhook handler error:", e);
+    console.error("Webhook handler error", e);
     return NextResponse.json(
       { error: "Webhook handler failed" },
       { status: 500 }

@@ -42,12 +42,20 @@ type BuyerForm = {
   sameAsBilling: boolean;
 };
 
+type PriceBreakdown = {
+  subtotalUsd: number;
+  shippingUsd: number;
+  processingFeeUsd: number;
+  totalUsd: number;
+};
+
 type CheckoutInnerProps = {
   clientSecret: string;
   lockedSubtotal: number;
   lockExpiresAt: number;
   profile: UserProfile | null;
   userEmail: string | null;
+  breakdown: PriceBreakdown | null;
 };
 
 function formatMoney(n: number) {
@@ -87,6 +95,7 @@ function CheckoutInner({
   lockExpiresAt,
   profile,
   userEmail,
+  breakdown,
 }: CheckoutInnerProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -109,7 +118,7 @@ function CheckoutInner({
   );
   const lockExpired = remainingMs <= 0;
 
-  // ⏱️ 10-minute lock countdown
+  // countdown timer
   useEffect(() => {
     const id = setInterval(() => {
       setRemainingMs(lockExpiresAt - Date.now());
@@ -117,7 +126,7 @@ function CheckoutInner({
     return () => clearInterval(id);
   }, [lockExpiresAt]);
 
-  // 🧠 One-time prefill from profile (if available)
+  // one-time prefill from profile
   const [prefilled, setPrefilled] = useState(false);
   useEffect(() => {
     if (prefilled) return;
@@ -194,7 +203,6 @@ function CheckoutInner({
 
     setSubmitting(true);
 
-    // Decide final shipping address (respect "same as billing")
     const ship = buyer.sameAsBilling ? buyer.billing : buyer.shipping;
 
     const { error } = await stripe.confirmPayment({
@@ -223,9 +231,18 @@ function CheckoutInner({
       return;
     }
 
-    // Some flows will redirect, but if not:
+    // non-redirect flows
     clear();
   }
+
+  // use breakdown from backend if available, otherwise fall back
+  const subtotal =
+    breakdown?.subtotalUsd != null ? breakdown.subtotalUsd : lockedSubtotal;
+  const shippingUsd = breakdown?.shippingUsd ?? 0;
+  const processingFeeUsd =
+    breakdown?.processingFeeUsd ?? Number((subtotal * 0.055).toFixed(2));
+  const totalUsd =
+    breakdown?.totalUsd ?? subtotal + shippingUsd + processingFeeUsd;
 
   return (
     <form
@@ -234,7 +251,7 @@ function CheckoutInner({
     >
       <h1 className="text-2xl font-semibold">Checkout</h1>
 
-      {/* 🔐 Price lock banner with BIG TIMER */}
+      {/* Price lock banner with big timer */}
       <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 sm:px-6 sm:py-5">
         {!lockExpired ? (
           <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
@@ -273,9 +290,9 @@ function CheckoutInner({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr),minmax(0,1.25fr)]">
-        {/* Left: Form sections */}
+        {/* Left: form sections */}
         <div className="space-y-6">
-          {/* 1. Personal information */}
+          {/* 1. Personal info */}
           <section className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
             <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">
               1. Personal information
@@ -321,7 +338,7 @@ function CheckoutInner({
             </div>
           </section>
 
-          {/* 2. Billing address */}
+          {/* 2. Billing */}
           <section className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
             <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">
               2. Billing address
@@ -436,7 +453,7 @@ function CheckoutInner({
             </div>
           </section>
 
-          {/* 3. Delivery address */}
+          {/* 3. Delivery */}
           <section className="space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">
@@ -580,33 +597,47 @@ function CheckoutInner({
             </h2>
             <PaymentElement />
             <p className="text-xs text-neutral-500">
-              Card details and wallets (Apple Pay, Google Pay, etc.) are securely
-              processed by Stripe. We never see your full card number.
+              Card details and wallets (Apple Pay, Google Pay, etc.) are
+              securely processed by Stripe. We never see your full card number.
             </p>
           </section>
         </div>
 
-        {/* Right: Summary + pay button */}
+        {/* Right: summary + button */}
         <aside className="h-max space-y-3 rounded-2xl border border-neutral-200 bg-white p-5">
           <h2 className="text-lg font-semibold">Order summary</h2>
           <div className="flex justify-between text-sm">
-            <span>Locked subtotal</span>
-            <span>{formatMoney(lockedSubtotal)}</span>
+            <span>Subtotal (locked)</span>
+            <span>{formatMoney(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-xs text-neutral-500">
-            <span>Note</span>
-            <span className="text-right">
-              Final total (including live metal price, shipping, and fees) is
-              confirmed by Stripe at payment.
+          <div className="flex justify-between text-sm text-neutral-700">
+            <span>Secure Payment Processing Fee</span>
+            <span>{formatMoney(processingFeeUsd)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Shipping</span>
+            <span>
+              {shippingUsd === 0
+                ? "FREE"
+                : formatMoney(shippingUsd)}
             </span>
           </div>
+          
+          <div className="mt-2 flex justify-between border-t pt-2 text-sm font-semibold">
+            <span>Total</span>
+            <span>{formatMoney(totalUsd)}</span>
+          </div>
+          <p className="mt-1 text-[11px] text-neutral-500">
+            Total includes metal price at time of checkout, shipping, and
+            Secure Payment Processing Fee.
+          </p>
 
           <button
             type="submit"
             disabled={
               submitting || !clientSecret || !stripe || !elements || lockExpired
             }
-            className="btn-secondary mt-3 w-full disabled:opacity-60 cursor-pointer"
+            className="btn-secondary mt-3 w-full cursor-pointer disabled:opacity-60"
           >
             {lockExpired
               ? "Price lock expired"
@@ -616,9 +647,7 @@ function CheckoutInner({
           </button>
 
           {errorMsg && (
-            <p className="text-sm text-red-600">
-              {errorMsg}
-            </p>
+            <p className="text-sm text-red-600">{errorMsg}</p>
           )}
         </aside>
       </div>
@@ -637,11 +666,13 @@ export default function CheckoutPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  // 🔐 snapshot subtotal + lock time once
+  const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
+
+  // snapshot subtotal + lock time once
   const [lockedSubtotal] = useState(() => subtotalFn());
   const [lockExpiresAt] = useState(() => Date.now() + 10 * 60 * 1000);
 
-  // Load profile from Firestore (if user logged in)
+  // load profile
   useEffect(() => {
     if (!user) {
       setProfile(emptyProfile);
@@ -667,7 +698,7 @@ export default function CheckoutPage() {
     };
   }, [user]);
 
-  // Create PaymentIntent
+  // create PaymentIntent
   useEffect(() => {
     async function run() {
       if (!items.length) {
@@ -699,6 +730,9 @@ export default function CheckoutPage() {
         const json = JSON.parse(text);
         if (json.clientSecret) {
           setClientSecret(json.clientSecret);
+          if (json.breakdown) {
+            setBreakdown(json.breakdown as PriceBreakdown);
+          }
         } else {
           console.error("No clientSecret:", json);
           alert("Missing clientSecret from server.");
@@ -741,6 +775,7 @@ export default function CheckoutPage() {
         lockExpiresAt={lockExpiresAt}
         profile={profile}
         userEmail={user?.email ?? null}
+        breakdown={breakdown}
       />
     </Elements>
   );
