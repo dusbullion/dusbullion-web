@@ -138,7 +138,7 @@ export default function ProductCard({ product, spotPerOz }: ProductCardProps) {
         <div className="space-y-1 text-xs">
           {spotPerOz ? (
             <>
-              {/* <p className="text-neutral-600">
+              <p className="text-neutral-600">
                 Buy gold by dollar amount. Choose between{" "}
                 <span className="font-medium">
                   {money(minAmount)} – {money(maxAmount)}
@@ -151,7 +151,7 @@ export default function ProductCard({ product, spotPerOz }: ProductCardProps) {
                   ${premiumPerGram.toFixed(2)} per gram
                 </span>{" "}
                 over live spot.
-              </p> */}
+              </p>
               <p className="text-neutral-700">
                 Est. price per gram now:{" "}
                 <span className="font-semibold">{money(pricePerGram)} / g</span>
@@ -205,16 +205,23 @@ export default function ProductCard({ product, spotPerOz }: ProductCardProps) {
           </>
         ) : (
           <>
-            <div className="mt-3 space-y-1">
-              <label className="block text-xs font-medium text-neutral-700">
-                Choose amount (USD)
-              </label>
+            {/* 🔥 Slider control for amount selection */}
+            <div className="mt-3 space-y-2">
+              <div className="flex items-baseline justify-between">
+                <label className="block text-xs font-medium text-neutral-700">
+                  Choose amount (USD)
+                </label>
+                <span className="text-sm font-semibold">
+                  {money(customAmount)}
+                </span>
+              </div>
+
               <input
-                type="number"
+                type="range"
                 min={minAmount}
                 max={maxAmount}
                 step={10}
-                className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+                className="w-full accent-black"
                 value={customAmount}
                 onChange={(e) => {
                   const v = Number(e.target.value || minAmount);
@@ -223,14 +230,16 @@ export default function ProductCard({ product, spotPerOz }: ProductCardProps) {
                   setCustomAmount(clamped);
                 }}
               />
-              <p className="text-[11px] text-neutral-500">
-                Minimum {money(minAmount)} – Maximum {money(maxAmount)}.
-              </p>
+
+              <div className="flex justify-between text-[11px] text-neutral-500">
+                <span>{money(minAmount)}</span>
+                <span>{money(maxAmount)}</span>
+              </div>
             </div>
 
             <button
               type="button"
-              className="btn-secondary mt-2 w-full"
+              className="btn-secondary mt-3 w-full"
               onClick={handleAddCustom}
               disabled={!spotPerOz}
             >
