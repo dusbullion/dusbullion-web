@@ -2,6 +2,7 @@
 
 export type Metal = "GOLD" | "SILVER";
 export type Form = "BAR" | "COIN";
+
 export type Product = {
   id: string;
   sku: string;
@@ -15,24 +16,37 @@ export type Product = {
   country: string;       // ISO-ish (e.g., "CH", "US")
   image: string;         // /public/products/...
   inStock: boolean;
+
+  // 🔽 NEW – for special “custom per gram” product
+  variableAmount?: boolean;     // true = user chooses dollar amount instead of qty
+  minAmountUsd?: number;        // min amount user can enter
+  maxAmountUsd?: number;        // max amount user can enter
+  premiumPerGramUsd?: number;   // premium per gram over spot (e.g. 70)
 };
 
 export const PRODUCTS: Product[] = [
-  //--- The Sample Gold Bar ---
-  // {
-  //   id: "au-bar-1oz-sample-goldbar",
-  //   sku: "AU-BAR-1OZ-SAMPLE",
-  //   name: "The Sample Gold (1oz Gold Bar)",
-  //   metal: "GOLD",
-  //   form: "BAR",
-  //   weightGrams: 0.001,
-  //   purity: "999.9",
-  //   premiumUsd: 1,
-  //   brand: "The Sample Gold",
-  //   country: "UK",
-  //   image: "/products/Great-Britain-Great-Engravers-Collection-Una-Lion-1oz.jpg",
-  //   inStock: true,
-  // },
+  // --- 🔥 NEW: Custom Gold Purchase (Per Gram) ---
+  {
+    id: "au-custom-gram",
+    sku: "AU-CUSTOM-GRAM",
+    name: "Dore Gold Purchase (Per Gram)",
+    metal: "GOLD",
+    form: "BAR",
+    // These fields are not used in the standard way for this product,
+    // but we must still provide values.
+    weightGrams: 1,
+    purity: "999.9",
+    premiumUsd: 0,
+    brand: "dusbullion",
+    country: "US",
+    image: "/products/dore-bar-gold-grains.jpg", // 👉 create this image in /public/products
+    inStock: true,
+
+    variableAmount: true,
+    minAmountUsd: 100,
+    maxAmountUsd: 5000,
+    premiumPerGramUsd: 70, // $70 premium per gram over spot
+  },
   // --- The Royal Mint ---
   {
     id: "au-bar-1oz-royal-mint",
@@ -270,7 +284,8 @@ export const PRODUCTS: Product[] = [
     image: "/products/perth-mint-1oz.jpg",
     inStock: true,
   },
-  // --- The Varied Any Mint ---
+
+  // --- The Varied Any Mint 1kg ---
   {
     id: "au-bar-1kg-varied",
     sku: "AU-BAR-1OZ-VARIED",
@@ -285,6 +300,8 @@ export const PRODUCTS: Product[] = [
     image: "/products/varied-anymint-1kg.jpg",
     inStock: true,
   },
+
+  
 ];
 
 export default PRODUCTS;
