@@ -138,7 +138,7 @@ export default function ProductCard({ product, spotPerOz }: ProductCardProps) {
         <div className="space-y-1 text-xs">
           {spotPerOz ? (
             <>
-              <p className="text-neutral-600">
+              {/* <p className="text-neutral-600">
                 Buy gold by dollar amount. Choose between{" "}
                 <span className="font-medium">
                   {money(minAmount)} – {money(maxAmount)}
@@ -151,7 +151,7 @@ export default function ProductCard({ product, spotPerOz }: ProductCardProps) {
                   ${premiumPerGram.toFixed(2)} per gram
                 </span>{" "}
                 over live spot.
-              </p>
+              </p> */}
               <p className="text-neutral-700">
                 Est. price per gram now:{" "}
                 <span className="font-semibold">{money(pricePerGram)} / g</span>
