@@ -84,10 +84,10 @@ export default function AccountPage() {
     }
 
     // 🚨 Block saving if email is not verified
-    if (!user.emailVerified) {
-      alert("Please verify your email before saving your profile.");
-      return;
-    }
+    // if (!user.emailVerified) {
+    //   alert("Please verify your email before saving your profile.");
+    //   return;
+    // }
 
     setSaving(true);
     setMessage(null);
@@ -133,7 +133,7 @@ export default function AccountPage() {
       </p>
 
       {/* 🔔 Email verification banner */}
-      {user && !user.emailVerified && (
+      {/* {user && !user.emailVerified && (
         <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
           <p className="text-sm font-medium text-amber-900">
             Your email is not verified.
@@ -160,7 +160,7 @@ export default function AccountPage() {
             Resend verification email
           </button>
         </div>
-      )}
+      )} */}
 
       <form
         onSubmit={handleSave}

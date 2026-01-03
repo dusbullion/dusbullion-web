@@ -60,14 +60,14 @@ export default function AuthModal() {
       );
 
       // If email is not verified, block and send verification mail
-      if (!cred.user.emailVerified) {
-        await sendVerificationEmail(cred.user);
-        await signOut(auth);
-        setInfo(
-          "We sent you a verification email. Please click the link in your inbox before signing in."
-        );
-        return;
-      }
+      // if (!cred.user.emailVerified) {
+      //   await sendVerificationEmail(cred.user);
+      //   await signOut(auth);
+      //   setInfo(
+      //     "We sent you a verification email. Please click the link in your inbox before signing in."
+      //   );
+      //   return;
+      // }
 
       resetForm();
       closeAuth();
@@ -101,14 +101,14 @@ export default function AuthModal() {
       }
 
       // 3) Send verification email
-      await sendVerificationEmail(cred.user);
+      //await sendVerificationEmail(cred.user);
 
       // 4) Optionally sign them out so they must verify first
       await signOut(auth);
 
-      setInfo(
-        "Account created! Please check your email and click the verification link before logging in."
-      );
+      // setInfo(
+      //   "Account created! Please check your email and click the verification link before logging in."
+      // );
 
       // optional: move them automatically to login tab
       setTab("login");
