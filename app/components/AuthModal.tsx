@@ -12,9 +12,7 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
-  signOut,
 } from "firebase/auth";
-import { sendVerificationEmail } from "../lib/auth-email";
 
 export default function AuthModal() {
   const { authOpen, initialTab, closeAuth } = useUI();
@@ -53,22 +51,7 @@ export default function AuthModal() {
     }
     setLoading(true);
     try {
-      const cred = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
-
-      // If email is not verified, block and send verification mail
-      // if (!cred.user.emailVerified) {
-      //   await sendVerificationEmail(cred.user);
-      //   await signOut(auth);
-      //   setInfo(
-      //     "We sent you a verification email. Please click the link in your inbox before signing in."
-      //   );
-      //   return;
-      // }
-
+      await signInWithEmailAndPassword(auth, email.trim(), password);
       resetForm();
       closeAuth();
     } catch (e: any) {
@@ -87,8 +70,9 @@ export default function AuthModal() {
       return;
     }
     setLoading(true);
+
     try {
-      // 1) Create user
+      // 1) Create user (Firebase automatically signs them in)
       const cred = await createUserWithEmailAndPassword(
         auth,
         email.trim(),
@@ -100,22 +84,13 @@ export default function AuthModal() {
         await updateProfile(cred.user, { displayName: name.trim() });
       }
 
-      // 3) Send verification email
-      //await sendVerificationEmail(cred.user);
-
-      // 4) Optionally sign them out so they must verify first
-      await signOut(auth);
-
-      // setInfo(
-      //   "Account created! Please check your email and click the verification link before logging in."
-      // );
-
-      // optional: move them automatically to login tab
-      setTab("login");
+      // ✅ DO NOT sign out — keep them logged in
+      // ✅ Close modal and clear inputs
       resetForm();
-      // You can decide whether to close modal or keep it open.
-      // Here we keep it open so they can read the message.
-      // closeAuth();
+      closeAuth();
+
+      // Optional: show a quick success message somewhere else in UI if you want
+      // setInfo("Account created. You're now signed in.");
     } catch (e: any) {
       setErr(parseFirebaseError(e?.message || String(e)));
     } finally {
@@ -253,17 +228,15 @@ export default function AuthModal() {
             </button>
           </div>
 
-          {/* Google (optional) */}
           <div className="relative my-3">
             <div className="absolute inset-0 flex items-center">
               <div className="h-px w-full bg-neutral-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-2 text-xs text-neutral-500">
-                or
-              </span>
+              <span className="bg-white px-2 text-xs text-neutral-500">or</span>
             </div>
           </div>
+
           <button
             type="button"
             onClick={handleGoogle}
@@ -282,6 +255,7 @@ export default function AuthModal() {
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl border border-neutral-300 px-3 py-2"
               placeholder="John Doe"
+              autoFocus
             />
           </div>
           <div className="space-y-1">
@@ -329,17 +303,15 @@ export default function AuthModal() {
             </button>
           </div>
 
-          {/* Google (optional) */}
           <div className="relative my-3">
             <div className="absolute inset-0 flex items-center">
               <div className="h-px w-full bg-neutral-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-2 text-xs text-neutral-500">
-                or
-              </span>
+              <span className="bg-white px-2 text-xs text-neutral-500">or</span>
             </div>
           </div>
+
           <button
             type="button"
             onClick={handleGoogle}
@@ -357,18 +329,11 @@ export default function AuthModal() {
 /* ---------- helpers ---------- */
 
 function parseFirebaseError(msg: string): string {
-  // Humanize common Firebase error messages
-  if (msg.includes("auth/invalid-credential"))
-    return "Invalid email or password.";
-  if (msg.includes("auth/user-not-found"))
-    return "No account found with this email.";
-  if (msg.includes("auth/wrong-password"))
-    return "Wrong password. Try again.";
-  if (msg.includes("auth/email-already-in-use"))
-    return "This email is already registered.";
-  if (msg.includes("auth/too-many-requests"))
-    return "Too many attempts. Please wait and try again.";
-  if (msg.includes("auth/network-request-failed"))
-    return "Network error. Check your connection.";
+  if (msg.includes("auth/invalid-credential")) return "Invalid email or password.";
+  if (msg.includes("auth/user-not-found")) return "No account found with this email.";
+  if (msg.includes("auth/wrong-password")) return "Wrong password. Try again.";
+  if (msg.includes("auth/email-already-in-use")) return "This email is already registered.";
+  if (msg.includes("auth/too-many-requests")) return "Too many attempts. Please wait and try again.";
+  if (msg.includes("auth/network-request-failed")) return "Network error. Check your connection.";
   return msg.replace("Firebase: ", "");
 }
